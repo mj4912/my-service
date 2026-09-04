@@ -12,3 +12,9 @@ desktop.ini
 
 # Claude Code 로컬 설정
 .claude/settings.local.json
+
+# 열쇠(API 키)가 담긴 파일 — 절대 깃허브에 올라가지 않음
+.env
+.env.*
+# 값이 비어 있는 견본만 올림
+!.env.example
