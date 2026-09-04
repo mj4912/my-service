@@ -150,12 +150,15 @@
     white-space: nowrap;
   }
   .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
-  /* 배지도 세 가지 색 안에서 — 끝난 일은 초록, 기다리는 일은 먹색, 멈춘 일은 회색 */
-  .s-done    { background: var(--tint); color: var(--point); border-color: var(--tint-line); }
-  .s-wait    { background: #f3f4f6; color: var(--text); border-color: var(--line); }
-  .s-wait .dot { animation: blink 1.6s ease-in-out infinite; }
-  .s-progress{ background: #f3f4f6; color: var(--text); border-color: var(--line); }
-  .s-hold    { background: var(--soft); color: var(--muted); border-color: var(--line); }
+  /* 다섯 상태를 색으로 구분 — 바탕은 옅게, 글자만 진하게 */
+  .s-done    { background: var(--tint); color: var(--point);  border-color: var(--tint-line); }
+  .s-wait    { background: #fef4e3; color: #a25c06; border-color: #f7dfb6; }
+  .s-plan    { background: #f0ecfb; color: #5f4bc4; border-color: #ded5f6; }
+  .s-progress{ background: #e8f1fd; color: #1d6fd0; border-color: #cfe0fa; }
+  .s-hold    { background: #f3f4f6; color: var(--muted); border-color: var(--line); }
+  /* 답을 기다리는 두 상태만 점이 깜빡임 */
+  .s-wait .dot,
+  .s-plan .dot { animation: blink 1.6s ease-in-out infinite; }
   @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
 
   /* ── 오른쪽 위 : 고른 강사님 ──────────────────── */
@@ -467,7 +470,7 @@ const PALETTE = [
 const STATUS_CLASS = {
   "확정": "s-done",
   "회신 대기": "s-wait",
-  "강의안 대기": "s-wait",
+  "강의안 대기": "s-plan",
   "일정 조율 중": "s-progress",
   "보류": "s-hold"
 };
