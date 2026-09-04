@@ -3,141 +3,339 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>강사 배정 현황</title>
+<title>강사 메일 답장 도우미</title>
 <style>
   :root {
-    --bg: #f6f8fc;
+    /* 골라 쓴 색 세 가지 — 초록 · 흰색 · 먹색 */
+    --point: #00A47C;
+    --bg: #ffffff;
+    --text: #111827;
+    /* 위 세 가지에서 옅게 뽑아 쓰는 값들 */
+    --point-dark: #008F6B;
     --card: #ffffff;
-    --line: #e6eaf2;
-    --text: #333b4a;
-    --muted: #7c869b;
+    --soft: #f7f8f8;
+    --line: #e5e7eb;
+    --muted: #6b7280;
+    --tint: #E6F7F2;
+    --tint-line: #bfe8db;
     --skin: #f4cfae;
     --skin-shade: #d9a882;
-    --ink: #3c3a4a;
+    --ink: #111827;
+    --mine: #E6F7F2;
+    --mine-line: #bfe8db;
   }
   * { box-sizing: border-box; }
+  html { background: var(--bg); }
+  /* 화면 위쪽에 옅게 번지는 초록 빛 */
+  body::before {
+    content: "";
+    position: fixed;
+    top: -320px;
+    left: 50%;
+    width: 820px;
+    height: 820px;
+    transform: translateX(-50%);
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(0, 164, 124, .20) 0%, rgba(0, 164, 124, 0) 70%);
+    pointer-events: none;
+    z-index: -1;
+  }
   body {
+    background: transparent;
     margin: 0;
-    padding: 28px 24px 56px;
-    background: var(--bg);
+    padding: 40px 20px 72px;
     color: var(--text);
     font-family: "Pretendard", "Malgun Gothic", "맑은 고딕", system-ui, sans-serif;
     font-size: 16px;
     line-height: 1.6;
-  }
-  .notice {
-    font-size: 13px;
-    color: var(--muted);
-    margin: 0 0 18px;
-  }
-  h1 {
-    font-size: 24px;
-    margin: 0 0 4px;
     letter-spacing: -0.01em;
+    text-align: center;
   }
-  .sub {
-    margin: 0 0 24px;
-    font-size: 14px;
-    color: var(--muted);
+  .notice { font-size: 12px; color: var(--muted); margin: 0 0 22px; }
+  /* 로고 마크 — 초록 동그라미 안에 흰 체크 */
+  .logo { display: block; width: 40px; height: 40px; margin: 0 auto 16px; }
+  h1 {
+    font-size: clamp(30px, 4.4vw, 46px);
+    font-weight: 700;
+    line-height: 1.2;
+    letter-spacing: -0.02em;
+    margin: 0 0 14px;
   }
-  .grid {
+  .sub { margin: 0 0 40px; font-size: 17px; color: var(--muted); }
+
+  .layout {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
-    gap: 18px;
-    max-width: 1180px;
+    grid-template-columns: 330px 1fr;
+    gap: 20px;
+    max-width: 1160px;
+    margin: 0 auto;
+    align-items: start;
   }
-  .card {
-    display: flex;
-    gap: 16px;
+  @media (max-width: 880px) { .layout { grid-template-columns: 1fr; } }
+
+  .panel {
     background: var(--card);
     border: 1px solid var(--line);
-    border-radius: 14px;
-    padding: 18px;
-    box-shadow: 0 1px 2px rgba(60, 70, 100, .05);
+    border-radius: 16px;
+    box-shadow: 0 4px 16px rgba(17, 24, 39, .05);
+    overflow: hidden;
   }
+  .panel-head {
+    padding: 17px 20px;
+    border-bottom: 1px solid var(--line);
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+  }
+
+  /* ── 왼쪽 : 강사님 목록 ───────────────────────── */
+  .people { padding: 12px; max-height: 640px; overflow-y: auto; }
+  .group { font-size: 12px; font-weight: 600; color: var(--muted); margin: 12px 0 8px; }
+  .pick {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 11px;
+    width: 100%;
+    padding: 10px 12px;
+    margin-bottom: 5px;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 15px;
+    color: var(--text);
+    cursor: pointer;
+    /* 라벨은 한 줄 — 중간에서 줄이 바뀌지 않게 */
+    white-space: nowrap;
+    overflow: hidden;
+    /* 마우스를 올린 줄 · 고른 줄에 배경색이 스르륵 */
+    transition: background-color .2s ease, border-color .2s ease;
+  }
+  .pick:hover { background: var(--soft); }
+  .pick.on { background: var(--tint); border-color: var(--tint-line); }
+  .pick .avatar { width: 34px; height: 34px; border-radius: 9px; }
+  .pick .info { flex: 1; min-width: 0; }
+  /* 성함과 과정명은 각각 한 줄 — 길면 끝을 …으로 줄임 */
+  .pick .nm,
+  .pick .md {
+    display: block;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .pick .nm { font-weight: 700; }
+  .pick .md { font-size: 12px; color: var(--muted); line-height: 1.4; }
+  .pick .status { flex: 0 0 auto; }
+
   .avatar {
     flex: 0 0 auto;
-    width: 72px;
-    height: 72px;
+    width: 52px;
+    height: 52px;
     border-radius: 12px;
-    background: #eef2fa;
+    background: var(--soft);
     image-rendering: pixelated;
     shape-rendering: crispEdges;
   }
-  .body { min-width: 0; flex: 1; }
-  .course {
-    font-size: 20px;
-    font-weight: 700;
-    margin: 0 0 2px;
-    word-break: keep-all;
-  }
-  .people { margin: 0 0 12px; }
-  .person {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    flex-wrap: wrap;
-    margin-top: 8px;
-  }
-  /* 강사 / 보조강사 — 글자 굵기 동일 */
-  .role {
-    white-space: nowrap;
-    color: var(--muted);
-    font-size: 15px;
-    font-weight: 600;
-  }
-  .pname {
-    font-size: 16px;
-    font-weight: 700;
-    color: var(--text);
-    white-space: nowrap;
-  }
-  .row {
-    display: grid;
-    grid-template-columns: max-content 1fr;
-    gap: 4px 10px;
-    font-size: 15px;
-    margin-bottom: 4px;
-  }
-  .label {
-    white-space: nowrap;
-    color: var(--muted);
-    font-weight: 600;
-  }
-  .value { min-width: 0; word-break: keep-all; }
+
+  /* 상태 배지 */
   .status {
     display: inline-flex;
     align-items: center;
-    gap: 7px;
-    padding: 5px 12px;
+    gap: 6px;
+    padding: 4px 11px;
     border-radius: 999px;
+    font-size: 12px;
+    font-weight: 600;
+    border: 1px solid transparent;
+    white-space: nowrap;
+  }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; }
+  /* 배지도 세 가지 색 안에서 — 끝난 일은 초록, 기다리는 일은 먹색, 멈춘 일은 회색 */
+  .s-done    { background: var(--tint); color: var(--point); border-color: var(--tint-line); }
+  .s-wait    { background: #f3f4f6; color: var(--text); border-color: var(--line); }
+  .s-wait .dot { animation: blink 1.6s ease-in-out infinite; }
+  .s-progress{ background: #f3f4f6; color: var(--text); border-color: var(--line); }
+  .s-hold    { background: var(--soft); color: var(--muted); border-color: var(--line); }
+  @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
+
+  /* ── 오른쪽 위 : 고른 강사님 ──────────────────── */
+  .who {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 13px;
+    padding: 20px;
+    border-bottom: 1px solid var(--line);
+    white-space: nowrap;
+    overflow: hidden;
+  }
+  .who .nm { font-size: 18px; font-weight: 600; letter-spacing: -0.02em; }
+  .who .md { font-size: 13px; color: var(--muted); }
+
+  /* ── 오른쪽 : 말풍선 ─────────────────────────── */
+  .thread {
+    padding: 26px 24px;
+    max-height: 440px;
+    overflow-y: auto;
+    background: var(--soft);
+  }
+  .turn {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+  .turn:last-child { margin-bottom: 0; }
+  .turn.mine { justify-content: flex-end; }
+  /* 말풍선이 아래에서 위로 톡 — 위에서부터 하나씩 차례로 */
+  @keyframes popUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  .turn {
+    animation: popUp .28s ease-out both;
+    animation-delay: var(--d, 0s);
+  }
+  .turn .avatar { width: 34px; height: 34px; border-radius: 8px; }
+  .bubble {
+    max-width: 74%;
+    padding: 14px 18px;
+    border-radius: 16px;
+    border: 1px solid var(--line);
+    background: var(--card);
+    font-size: 15px;
+    line-height: 1.65;
+    word-break: keep-all;
+    white-space: pre-line;
+    /* 강사님에게 온 메일 — 왼쪽 정렬 */
+    text-align: left;
+  }
+  .turn.mine .bubble {
+    background: var(--mine);
+    border-color: var(--mine-line);
+    /* 내가 보낸 메일 — 오른쪽 정렬 */
+    text-align: right;
+  }
+  .when { display: block; font-size: 11px; color: var(--muted); margin-top: 8px; }
+
+  /* ── 오른쪽 아래 : 답장 초안 ─────────────────── */
+  .composer { padding: 22px 20px; border-top: 1px solid var(--line); }
+  .btn {
+    padding: 12px 24px;
+    border-radius: 10px;
+    border: 1px solid transparent;
+    background: var(--point);
+    color: #ffffff;
     font-family: inherit;
     font-size: 14px;
-    font-weight: 700;
-    border: 1px solid transparent;
+    font-weight: 600;
+    letter-spacing: -0.01em;
     cursor: pointer;
-    white-space: nowrap;
-    transition: background .12s, color .12s, border-color .12s;
+    transition: background-color .15s ease;
   }
-  .status:hover { filter: brightness(.97); }
-  .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
-  /* 완료 계열 */
-  .s-done    { background: #e7f6ee; color: #1f7a4d; border-color: #c3e8d4; }
-  /* 기다리는 중 — 색으로 구분 */
-  .s-wait    { background: #fff4e0; color: #a3661a; border-color: #f6dcb0; }
-  .s-wait .dot { animation: blink 1.6s ease-in-out infinite; }
-  /* 조율 중 */
-  .s-progress{ background: #e9f1ff; color: #2a5db0; border-color: #cddffb; }
-  /* 보류 */
-  .s-hold    { background: #f1f2f6; color: #6b7385; border-color: #dfe2ea; }
-  @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
+  .btn:hover { background: var(--point-dark); }
+  .btn[disabled] { cursor: default; }
+
+  /* 글 쓰는 중 — 점 세 개가 잠깐 깜빡임 */
+  .typing { display: none; justify-content: center; gap: 6px; margin-top: 18px; }
+  .typing.on { display: flex; }
+  .typing span {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--point);
+    animation: dot .8s ease-in-out infinite;
+  }
+  .typing span:nth-child(2) { animation-delay: .13s; }
+  .typing span:nth-child(3) { animation-delay: .26s; }
+  @keyframes dot {
+    0%, 100% { opacity: .25; transform: translateY(0); }
+    50%      { opacity: 1;   transform: translateY(-3px); }
+  }
+
+  /* 초안이 살짝 떠오르며 나타남 */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(6px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+  #draft {
+    animation: fadeUp .28s ease-out both;
+  }
+  #draft {
+    display: none;
+    width: 100%;
+    min-height: 300px;
+    margin-top: 18px;
+    padding: 20px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: var(--soft);
+    font-family: inherit;
+    font-size: 15px;
+    line-height: 1.75;
+    color: var(--text);
+    text-align: center;
+    resize: vertical;
+  }
+  #draft:focus { outline: 2px solid var(--tint-line); outline-offset: -1px; }
+
+  /* 이름을 누르면 캐릭터가 자동차를 타고 화면 가운데로 */
+  .ride {
+    position: fixed;
+    z-index: 50;
+    pointer-events: none;
+    transition: transform .4s ease-out, opacity .16s ease-in;
+    will-change: transform;
+  }
+  .ride .avatar {
+    width: 44px;
+    height: 44px;
+    margin-bottom: -9px;
+    border-radius: 0;
+    background: transparent;
+  }
+  .ride .car {
+    display: block;
+    width: 78px;
+    height: auto;
+    image-rendering: pixelated;
+    shape-rendering: crispEdges;
+  }
+  .ride.gone { opacity: 0; }
+
+  /* 움직임을 줄이도록 설정한 분에게는 애니메이션을 끔 */
+  @media (prefers-reduced-motion: reduce) {
+    .turn, #draft, .typing span { animation: none; }
+    .pick, .ride { transition: none; }
+  }
 </style>
 </head>
 <body>
   <p class="notice">예시 자료로 만든 연습 화면입니다</p>
-  <h1>교육 배정현황</h1>
-  <p class="sub">02_instructors.csv 기준</p>
-  <div class="grid" id="grid"></div>
+  <svg class="logo" viewBox="0 0 32 32" role="img" aria-label="로고">
+    <circle cx="16" cy="16" r="16" fill="var(--point)"/>
+    <path d="M9.5 16.5 L14 21 L22.5 12" fill="none" stroke="#ffffff"
+          stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  </svg>
+  <h1>강사 메일 답장 도우미</h1>
+  <p class="sub">강사님을 고르면 주고받은 메일이 보이고, 그 자리에서 답장 초안을 만들 수 있습니다</p>
+
+  <div class="layout">
+    <aside class="panel">
+      <div class="panel-head">강사님 목록</div>
+      <div class="people" id="people"></div>
+    </aside>
+
+    <section class="panel">
+      <div id="who"></div>
+      <div class="thread" id="thread"></div>
+      <div class="composer">
+        <button type="button" class="btn" id="make">답장 초안 만들기</button>
+        <div class="typing" id="typing" aria-hidden="true"><span></span><span></span><span></span></div>
+        <textarea id="draft"></textarea>
+      </div>
+    </section>
+  </div>
 
 <script>
 // 02_instructors.csv 내용
@@ -152,8 +350,107 @@ const ROWS = [
   { module: "포트폴리오 특강",   name: "임태호", status: "보류",        sub: "조은결", subStatus: "보류",        date: "2026-10-13(화) 19:00~21:00", place: "온라인 (Zoom)" }
 ];
 
-// 강사 · 보조강사가 함께 쓰는 상태 (배지를 누르면 다음 상태로 넘어감)
-const STATUSES = ["확정", "회신 대기", "강의안 대기", "일정 조율 중", "보류"];
+// 강사님별 주고받은 메일 이력 — 전부 지어낸 예시입니다
+// from: "나"(교육운영팀) / "강사님",  date: 보낸 날짜,  text: 내용 두세 줄
+// 모든 이력의 마지막 메일은 강사님이 보낸 것이며, 우리 답장을 기다리는 상태입니다.
+const MAILS = {
+  // ── 강사 ──────────────────────────────────────────────────
+  "이지현": [
+    { from: "나", date: "2026-08-25", text: "파이썬 기초 문법 과정 강사로 모시고자 연락드립니다.\n일시는 9월 15일(월) 10:00~13:00, 장소는 강남 러닝센터 3층 A강의실입니다.\n가능하신지 회신 부탁드립니다." },
+    { from: "강사님", date: "2026-08-26", text: "일정 확인했습니다. 9월 15일 오전 진행 가능합니다.\n3시간이면 3시수로 잡으면 될까요?" },
+    { from: "나", date: "2026-09-01", text: "네, 3시수 맞습니다. 배정 확정 처리했습니다.\n강의안은 9월 8일까지 전달 부탁드립니다." },
+    { from: "강사님", date: "2026-09-10", text: "강의안은 오늘 저녁까지 보내드리겠습니다.\n그리고 강남 러닝센터 건물 주차 등록이 되는지 궁금합니다. 차량으로 이동할 예정입니다." }
+  ],
+  "박준서": [
+    { from: "나", date: "2026-08-27", text: "데이터 분석 실습 과정(9월 17일(수) 14:00~18:00, 온라인 Zoom) 강사 배정 요청드립니다.\n4시간 4시수 기준입니다." },
+    { from: "강사님", date: "2026-09-05", text: "메일을 늦게 확인해 죄송합니다. 9월 17일 오후 진행 가능합니다.\n실습이 있어 수강생 PC에 파이썬이 미리 설치되어 있는지 확인 부탁드립니다." },
+    { from: "나", date: "2026-09-08", text: "설치 안내문을 수강생에게 미리 보내겠습니다.\n교육 전날 설치 여부를 취합해 알려드리겠습니다." },
+    { from: "강사님", date: "2026-09-11", text: "안내문 잘 봤습니다. 저는 화면 공유용으로 개인 노트북을 쓰려고 합니다.\nZoom은 운영팀 계정으로 접속하면 될까요? 소회의실을 쓰려면 호스트 권한이 필요합니다." }
+  ],
+  "정민아": [
+    { from: "나", date: "2026-09-01", text: "SQL 데이터 추출 과정(9월 22일(월) 10:00~13:00) 강사로 모시고자 합니다.\n장소는 강남 러닝센터 2층 B강의실이고 3시수입니다." },
+    { from: "강사님", date: "2026-09-02", text: "가능합니다. 진행하겠습니다.\n실습 데이터는 제가 준비해서 보내드리겠습니다." },
+    { from: "나", date: "2026-09-10", text: "감사합니다. 배정 확정했습니다.\n강의안 마감은 9월 15일이니 그때까지 전달 부탁드립니다." },
+    { from: "강사님", date: "2026-09-16", text: "강의안 보내드렸습니다.\n실습용 DB를 강의장 PC에 미리 설치해야 하는데, 제 노트북을 가져가는 편이 나을까요?\n강의장 PC 사양을 알려주시면 판단하겠습니다." }
+  ],
+  "한도윤": [
+    { from: "나", date: "2026-09-03", text: "머신러닝 입문 과정(9월 24일(수) 13:00~17:00, 판교 이노베이션랩 5층) 강사 요청드립니다.\n4시수로 잡고 있습니다." },
+    { from: "강사님", date: "2026-09-04", text: "네, 그 일정 가능합니다.\n실습 비중을 절반 정도로 잡으려 하는데 괜찮을까요?" },
+    { from: "나", date: "2026-09-14", text: "실습 비중은 강사님 판단에 맡기겠습니다.\n강의안 마감이 9월 19일인데 일정 괜찮으신지요?" },
+    { from: "강사님", date: "2026-09-18", text: "강의안은 이번 주말까지 정리해 보내드리겠습니다.\n판교 이노베이션랩은 처음 가는데 방문증 발급이 필요한가요? 5층까지 바로 올라가면 되는지 알려주세요." }
+  ],
+  "서예린": [
+    { from: "나", date: "2026-09-05", text: "시각화와 리포팅 과정(9월 29일(월) 10:00~14:00, 온라인 Zoom) 강사로 모시려 합니다.\n4시간 4시수입니다." },
+    { from: "강사님", date: "2026-09-06", text: "연락 감사합니다. 다만 9월 29일은 선약이 있어 어렵습니다.\n10월 초 오전 시간대라면 조정이 가능합니다." },
+    { from: "나", date: "2026-09-12", text: "10월 5일(월) 또는 10월 12일(월) 오전으로 대체 일정을 준비했습니다.\n편하신 쪽을 알려주시면 확정하겠습니다." },
+    { from: "강사님", date: "2026-09-15", text: "10월 5일(월) 오전이면 가능합니다.\n4시수면 중간 휴식을 두 번 넣으려 하는데 커리큘럼상 괜찮을까요?" }
+  ],
+  "최우진": [
+    { from: "나", date: "2026-09-10", text: "클라우드 기초 과정(10월 6일(월) 09:00~13:00, 강남 러닝센터 3층 A강의실) 강사 배정 요청드립니다.\n4시수 기준입니다." },
+    { from: "강사님", date: "2026-09-11", text: "가능합니다. 진행하겠습니다.\n실습 계정은 제가 미리 만들어 두겠습니다." },
+    { from: "나", date: "2026-09-25", text: "배정 확정되었습니다. 당일 30분 전 도착 부탁드립니다.\n강의안은 9월 29일까지 전달 부탁드립니다." },
+    { from: "강사님", date: "2026-09-29", text: "네, 확인했습니다. 실습이 있어 개인 노트북을 지참하려 합니다.\n강의장에 자리마다 전원 콘센트와 유선 인터넷이 있는지 확인 부탁드립니다." }
+  ],
+  "윤가온": [
+    { from: "나", date: "2026-09-14", text: "프로젝트 멘토링 과정(10월 8일(수) 14:00~18:00, 판교 이노베이션랩 5층) 강사로 모시고자 합니다.\n회신 부탁드립니다." },
+    { from: "나", date: "2026-09-21", text: "지난 메일 관련해 한 번 더 연락드립니다.\n10월 8일 오후 가능 여부만 알려주시면 감사하겠습니다." },
+    { from: "강사님", date: "2026-09-23", text: "회신이 늦어 죄송합니다. 10월 8일 오후 가능합니다.\n조를 나눠 멘토링한다고 들었는데 수강생이 몇 명인지, 시수는 4시수로 보면 되는지 알려주세요." }
+  ],
+  "임태호": [
+    { from: "나", date: "2026-09-18", text: "포트폴리오 특강(10월 13일(화) 19:00~21:00, 온라인 Zoom) 강사 요청드립니다.\n야간 2시간 과정입니다." },
+    { from: "강사님", date: "2026-09-19", text: "관심은 있으나 그 주에 개인 일정이 있어 확답이 어렵습니다.\n조금 더 시간을 주실 수 있을까요?" },
+    { from: "나", date: "2026-09-28", text: "현재 신청 인원이 적어 폐강 여부를 10월 5일에 결정할 예정입니다.\n결과가 나오면 바로 안내드리겠습니다." },
+    { from: "강사님", date: "2026-10-01", text: "폐강 안내 확인했습니다. 일단 그 주 저녁은 비워두겠습니다.\n폐강이 확정되면 언제까지 알려주실 수 있을까요? 다른 일정을 잡아야 해서 여쭙습니다." }
+  ],
+
+  // ── 보조강사 ──────────────────────────────────────────────
+  "김서우": [
+    { from: "나", date: "2026-08-25", text: "파이썬 기초 문법 과정(9월 15일(월) 10:00~13:00) 보조강사로 모시고자 합니다.\n장소는 강남 러닝센터 3층 A강의실입니다." },
+    { from: "강사님", date: "2026-08-27", text: "네, 가능합니다.\n주강사님이 이지현 강사님이라면 전에 함께해 본 적이 있어 수월할 것 같습니다." },
+    { from: "나", date: "2026-09-05", text: "배정 확정했습니다. 실습 시간에 수강생 질문 대응을 맡아주시면 됩니다.\n당일 9시 30분까지 도착 부탁드립니다." },
+    { from: "강사님", date: "2026-09-09", text: "확인했습니다. 실습 보조로만 들어가면 되는지 다시 한번 확인 부탁드립니다.\n제 노트북을 가져가야 할까요, 아니면 강의장 PC를 쓰면 될까요?" }
+  ],
+  "오하린": [
+    { from: "나", date: "2026-08-28", text: "데이터 분석 실습 과정(9월 17일(수) 14:00~18:00, 온라인 Zoom) 보조강사 요청드립니다.\n가능하신지 회신 부탁드립니다." },
+    { from: "나", date: "2026-09-04", text: "확인이 어려우셨을까 하여 한 번 더 연락드립니다.\n가능 여부만 알려주시면 감사하겠습니다." },
+    { from: "강사님", date: "2026-09-06", text: "늦게 답드려 죄송합니다. 9월 17일 오후 가능합니다.\n온라인 보조는 처음인데 소회의실 운영을 제가 맡는 건지, 시수는 어떻게 계산되는지 알려주세요." }
+  ],
+  "배시우": [
+    { from: "나", date: "2026-09-02", text: "SQL 데이터 추출 과정(9월 22일(월) 10:00~13:00, 강남 러닝센터 2층 B강의실) 보조강사로 모시려 합니다." },
+    { from: "강사님", date: "2026-09-03", text: "죄송하지만 그날 오전은 다른 일정이 있어 어렵습니다.\n오후 과정이라면 참여할 수 있습니다." },
+    { from: "나", date: "2026-09-11", text: "해당 과정은 오전 고정이라 조정이 어렵습니다.\n대신 10월 6일(월) 클라우드 기초 과정 보조는 어떠신지요?" },
+    { from: "강사님", date: "2026-09-14", text: "10월 6일 클라우드 기초 보조는 가능합니다.\n그 과정도 4시수인가요? 장소가 강남이면 이동에 여유가 있어 좋겠습니다." }
+  ],
+  "노지안": [
+    { from: "나", date: "2026-09-03", text: "머신러닝 입문 과정(9월 24일(수) 13:00~17:00, 판교 이노베이션랩 5층) 보조강사 요청드립니다.\n4시수 기준입니다." },
+    { from: "강사님", date: "2026-09-05", text: "가능합니다. 참여하겠습니다.\n실습 환경은 미리 안내받을 수 있을까요?" },
+    { from: "나", date: "2026-09-16", text: "실습 환경 안내와 준비물은 다음 주에 정리해 보내드리겠습니다.\n당일 12시 30분까지 도착 부탁드립니다." },
+    { from: "강사님", date: "2026-09-19", text: "네, 확인했습니다.\n판교 이노베이션랩은 주차 지원이 되나요? 대중교통이 애매해 차량으로 가려고 합니다." }
+  ],
+  "문채원": [
+    { from: "나", date: "2026-09-06", text: "시각화와 리포팅 과정(9월 29일(월) 10:00~14:00, 온라인 Zoom) 보조강사로 모시고자 합니다.\n4시수입니다." },
+    { from: "나", date: "2026-09-13", text: "지난 메일 관련해 한 번 더 연락드립니다.\n가능 여부를 이번 주 중 알려주시면 큰 도움이 됩니다." },
+    { from: "강사님", date: "2026-09-16", text: "9월 29일 오전 가능합니다.\n다만 일정이 10월로 옮겨질 수 있다고 들었는데, 확정되면 다시 알려주실 수 있을까요?" }
+  ],
+  "강리원": [
+    { from: "나", date: "2026-09-11", text: "클라우드 기초 과정(10월 6일(월) 09:00~13:00, 강남 러닝센터 3층 A강의실) 보조강사 요청드립니다." },
+    { from: "강사님", date: "2026-09-12", text: "네, 가능합니다.\n오전 과정이라 일찍 도착하도록 하겠습니다." },
+    { from: "나", date: "2026-09-26", text: "배정 확정했습니다. 실습 계정 배부와 질문 대응을 맡아주시면 됩니다.\n강의장은 8시 40분에 개방됩니다." },
+    { from: "강사님", date: "2026-09-30", text: "확정 감사합니다. 8시 30분쯤 도착할 것 같습니다.\n그 시간에 문이 잠겨 있다면 누구에게 연락하면 될까요?" }
+  ],
+  "신유하": [
+    { from: "나", date: "2026-09-15", text: "프로젝트 멘토링 과정(10월 8일(수) 14:00~18:00, 판교 이노베이션랩 5층) 보조강사로 모시려 합니다." },
+    { from: "강사님", date: "2026-09-16", text: "가능합니다. 참여하겠습니다.\n조별 멘토링이라면 제가 한두 조를 맡으면 될까요?" },
+    { from: "나", date: "2026-09-24", text: "네, 두 조 정도 맡아주시면 됩니다.\n보조 자료(멘토링 체크리스트)는 10월 2일까지 부탁드립니다." },
+    { from: "강사님", date: "2026-09-27", text: "체크리스트는 10월 2일까지 보내드리겠습니다.\n주강사님 강의안을 먼저 받아볼 수 있을까요? 내용을 맞춰 준비하고 싶습니다." }
+  ],
+  "조은결": [
+    { from: "나", date: "2026-09-18", text: "포트폴리오 특강(10월 13일(화) 19:00~21:00, 온라인 Zoom) 보조강사 요청드립니다.\n야간 2시간 과정입니다." },
+    { from: "강사님", date: "2026-09-20", text: "야간이지만 온라인이라 참여 가능합니다.\n개설이 확정되면 알려주세요." },
+    { from: "나", date: "2026-09-29", text: "신청 인원이 적어 폐강 여부를 10월 5일에 결정할 예정입니다.\n결과가 나오는 대로 안내드리겠습니다." },
+    { from: "강사님", date: "2026-10-02", text: "폐강 여부 안내 잘 받았습니다.\n혹시 진행된다면 야간 2시간이 2시수로 계산되는지, 교통비 지원이 있는지 확인 부탁드립니다." }
+  ]
+};
 
 // 사람마다 머리색 / 옷색만 다르게
 const PALETTE = [
@@ -174,6 +471,9 @@ const STATUS_CLASS = {
   "일정 조율 중": "s-progress",
   "보류": "s-hold"
 };
+
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) =>
+  ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 
 // 픽셀 캐릭터 도안 (하나만 사용, 머리색·옷색만 바뀜)
 function avatar(hair, shirt) {
@@ -201,50 +501,196 @@ function avatar(hair, shirt) {
 </svg>`;
 }
 
-const esc = (s) => s.replace(/[&<>"]/g, (c) =>
-  ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
-
-// 강사 / 보조강사 한 줄 — 역할 · 이름 · 상태 배지 (두 줄이 같은 모양)
-function person(role, name, status) {
+// 픽셀 자동차 (아바타와 같은 방식, 몸통 색만 그 사람 옷색을 따라감)
+function carSvg(shirt) {
+  const px = (x, y, w, h, fill) =>
+    `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${fill}"/>`;
   return `
-      <div class="person">
-        <span class="role">${esc(role)}</span>
-        <span class="pname">${esc(name)}</span>
-        <button type="button" class="status ${STATUS_CLASS[status] || "s-hold"}"
-                data-status="${esc(status)}" title="눌러서 상태 변경">
-          <span class="dot"></span>${esc(status)}
-        </button>
-      </div>`;
+<svg class="car" viewBox="0 0 24 10" role="img" aria-hidden="true">
+  ${px(2, 4, 20, 3, shirt)}
+  ${px(3, 3, 4, 1, shirt)}
+  ${px(16, 3, 5, 1, shirt)}
+  ${px(1, 5, 1, 2, shirt)}
+  ${px(22, 4, 2, 1, "#f0c473")}
+  ${px(5, 7, 4, 2, "var(--ink)")}
+  ${px(15, 7, 4, 2, "var(--ink)")}
+  ${px(6, 8, 2, 1, "#9aa3b5")}
+  ${px(16, 8, 2, 1, "#9aa3b5")}
+</svg>`;
 }
 
-document.getElementById("grid").innerHTML = ROWS.map((r, i) => {
-  const c = PALETTE[i % PALETTE.length];
-  return `
-  <article class="card">
-    ${avatar(c.hair, c.shirt)}
-    <div class="body">
-      <p class="course">${esc(r.module)}</p>
-      <div class="people">
-        ${person("강사", r.name, r.status)}
-        ${person("보조강사", r.sub, r.subStatus)}
-      </div>
-      <div class="row">
-        <span class="label">일정</span><span class="value">${esc(r.date)}</span>
-        <span class="label">장소</span><span class="value">${esc(r.place)}</span>
-      </div>
-    </div>
-  </article>`;
-}).join("");
+// 강사 · 보조강사를 한 사람씩 풀어 놓기 (강사 8명 + 보조강사 8명)
+const PEOPLE = [];
+ROWS.forEach((r, i) => PEOPLE.push({
+  role: "강사", name: r.name, status: r.status,
+  module: r.module, date: r.date, place: r.place, color: PALETTE[i % 8]
+}));
+ROWS.forEach((r, i) => PEOPLE.push({
+  role: "보조강사", name: r.sub, status: r.subStatus,
+  module: r.module, date: r.date, place: r.place, color: PALETTE[(i + 3) % 8]
+}));
 
-// 배지를 누르면 다음 상태로 (강사 · 보조강사 동일하게 동작)
-document.getElementById("grid").addEventListener("click", (e) => {
-  const badge = e.target.closest(".status");
-  if (!badge) return;
-  const next = STATUSES[(STATUSES.indexOf(badge.dataset.status) + 1) % STATUSES.length];
-  badge.dataset.status = next;
-  badge.className = "status " + (STATUS_CLASS[next] || "s-hold");
-  badge.innerHTML = `<span class="dot"></span>${esc(next)}`;
+const WEEK = ["일", "월", "화", "수", "목", "금", "토"];
+
+// "2026-08-25" → "8월 25일(화)"
+function niceDate(text) {
+  const [y, m, d] = text.split("-").map(Number);
+  return `${m}월 ${d}일(${WEEK[new Date(y, m - 1, d).getDay()]})`;
+}
+// "2026-09-15(월) 10:00~13:00" → "9월 15일(월) 10:00~13:00"
+function shortSchedule(text) {
+  return text.replace(/^\d{4}-(\d{2})-(\d{2})/, (_, m, d) => `${Number(m)}월 ${Number(d)}일`);
+}
+
+// 지금은 버튼을 눌러도 미리 넣어둔 예시 문장만 나옵니다 (5부분 · 14줄)
+function sampleDraft(p) {
+  return `안녕하세요, ${p.name} ${p.role}님.
+알고링크 전미정 입니다.
+
+${p.module} 과정 관련해 회신드립니다.
+
+· 일시 : ${shortSchedule(p.date)}
+· 장소 : ${p.place}
+
+문의 주신 사항은 확인 후 다시 안내드리겠습니다.
+당일에는 시작 30분 전까지 도착 부탁드립니다.
+
+늘 도움 주셔서 감사합니다.
+
+알고링크 전미정 드림`;
+}
+
+const peopleEl = document.getElementById("people");
+const whoEl = document.getElementById("who");
+const threadEl = document.getElementById("thread");
+const draftEl = document.getElementById("draft");
+const makeBtn = document.getElementById("make");
+const typingEl = document.getElementById("typing");
+
+let picked = null;
+let typingTimer = null;
+
+function badge(status) {
+  return `<span class="status ${STATUS_CLASS[status] || "s-hold"}"><span class="dot"></span>${esc(status)}</span>`;
+}
+
+// 왼쪽 한 줄 — 아바타 + 성함 · 과정명 + 상태
+function pickRow(p, i) {
+  return `
+    <button type="button" class="pick" data-i="${i}">
+      ${avatar(p.color.hair, p.color.shirt)}
+      <span class="info">
+        <span class="nm">${esc(p.name)}</span>
+        <span class="md">${esc(p.module)}</span>
+      </span>
+      ${badge(p.status)}
+    </button>`;
+}
+
+peopleEl.innerHTML =
+  `<p class="group">강사</p>` +
+  PEOPLE.slice(0, ROWS.length).map((p, i) => pickRow(p, i)).join("") +
+  `<p class="group">보조강사</p>` +
+  PEOPLE.slice(ROWS.length).map((p, i) => pickRow(p, i + ROWS.length)).join("");
+
+function show(i) {
+  picked = PEOPLE[i];
+
+  document.querySelectorAll(".pick").forEach((b) =>
+    b.classList.toggle("on", b.dataset.i === String(i)));
+
+  // 맨 위 한 줄 — 아바타 · 성함 · 맡으신 모듈과 일정
+  whoEl.innerHTML = `
+    <div class="who">
+      ${avatar(picked.color.hair, picked.color.shirt)}
+      <span class="nm">${esc(picked.name)} ${esc(picked.role)}님</span>
+      <span class="md">${esc(picked.module)} · ${esc(shortSchedule(picked.date))}</span>
+    </div>`;
+
+  // 오래된 것부터 아래로 — 강사님은 왼쪽(아바타 붙임), 나는 오른쪽
+  // 위에서부터 하나씩 차례로 떠오르도록 말풍선마다 시작을 조금씩 늦춤
+  threadEl.innerHTML = (MAILS[picked.name] || []).map((m, n) => {
+    const mine = m.from === "나";
+    return `
+    <div class="turn ${mine ? "mine" : ""}" style="--d:${(n * 0.08).toFixed(2)}s">
+      ${mine ? "" : avatar(picked.color.hair, picked.color.shirt)}
+      <div class="bubble">${esc(m.text)}<span class="when">${esc(niceDate(m.date))}</span></div>
+    </div>`;
+  }).join("");
+  threadEl.scrollTop = 0;
+
+  clearTimeout(typingTimer);
+  typingEl.classList.remove("on");
+  makeBtn.disabled = false;
+  draftEl.style.display = "none";
+  draftEl.value = "";
+}
+
+// 누른 줄에서 화면 한가운데까지 0.4초 — 도착하면 사라지고 메일 내역이 뜸
+let ride = null;
+let rideTimers = [];
+
+function clearRide() {
+  rideTimers.forEach(clearTimeout);
+  rideTimers = [];
+  if (ride) { ride.remove(); ride = null; }
+}
+
+function driveToCenter(fromEl, p, done) {
+  clearRide();
+
+  // 움직임을 줄이도록 설정한 분에게는 바로 보여줌
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) { done(); return; }
+
+  const start = fromEl.getBoundingClientRect();
+  ride = document.createElement("div");
+  ride.className = "ride";
+  ride.innerHTML = avatar(p.color.hair, p.color.shirt) + carSvg(p.color.shirt);
+  ride.style.left = start.left + "px";
+  ride.style.top = start.top + "px";
+  document.body.appendChild(ride);
+
+  const dx = window.innerWidth / 2 - (start.left + ride.offsetWidth / 2);
+  const dy = window.innerHeight / 2 - (start.top + ride.offsetHeight / 2);
+
+  requestAnimationFrame(() => {
+    if (ride) ride.style.transform = `translate(${dx}px, ${dy}px)`;
+  });
+
+  rideTimers.push(setTimeout(() => { if (ride) ride.classList.add("gone"); }, 400));
+  rideTimers.push(setTimeout(() => { clearRide(); done(); }, 560));
+}
+
+peopleEl.addEventListener("click", (e) => {
+  const btn = e.target.closest(".pick");
+  if (!btn) return;
+  const i = Number(btn.dataset.i);
+
+  // 고른 줄 표시는 바로, 메일 내역은 자동차가 도착한 뒤
+  document.querySelectorAll(".pick").forEach((b) =>
+    b.classList.toggle("on", b.dataset.i === String(i)));
+
+  driveToCenter(btn, PEOPLE[i], () => show(i));
 });
+
+// 누르면 점 세 개가 잠깐 깜빡였다가 문장이 나타남
+makeBtn.addEventListener("click", () => {
+  if (!picked) return;
+  clearTimeout(typingTimer);
+  draftEl.style.display = "none";
+  makeBtn.disabled = true;
+  typingEl.classList.add("on");
+
+  typingTimer = setTimeout(() => {
+    typingEl.classList.remove("on");
+    makeBtn.disabled = false;
+    draftEl.value = sampleDraft(picked);
+    draftEl.style.display = "block";
+    draftEl.focus();
+  }, 620);
+});
+
+show(0);
 </script>
 </body>
 </html>

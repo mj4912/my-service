@@ -1,0 +1,546 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>강사 메일 답장 도우미</title>
+<style>
+  :root {
+    --bg: #f6f8fc;
+    --card: #ffffff;
+    --line: #e6eaf2;
+    --text: #333b4a;
+    --muted: #7c869b;
+    --skin: #f4cfae;
+    --skin-shade: #d9a882;
+    --ink: #3c3a4a;
+    --mine: #e9f1ff;
+    --mine-line: #cddffb;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 28px 24px 56px;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Pretendard", "Malgun Gothic", "맑은 고딕", system-ui, sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    text-align: center;
+  }
+  .notice { font-size: 13px; color: var(--muted); margin: 0 0 18px; }
+  h1 { font-size: 24px; margin: 0 0 4px; letter-spacing: -0.01em; }
+  .sub { margin: 0 0 10px; font-size: 14px; color: var(--muted); }
+  .back {
+    display: inline-block;
+    margin: 0 0 24px;
+    font-size: 14px;
+    color: #2a5db0;
+    text-decoration: none;
+  }
+  .back:hover { text-decoration: underline; }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 18px;
+    max-width: 1180px;
+    margin: 0 auto;
+    align-items: start;
+  }
+  @media (max-width: 860px) {
+    .layout { grid-template-columns: 1fr; }
+  }
+
+  .panel {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    box-shadow: 0 1px 2px rgba(60, 70, 100, .05);
+  }
+  .panel-head {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--line);
+    font-size: 15px;
+    font-weight: 700;
+  }
+
+  /* 왼쪽 — 강사 목록 */
+  .people { padding: 10px; max-height: 620px; overflow-y: auto; }
+  .group {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--muted);
+    margin: 8px 0 6px;
+  }
+  .pick {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 8px 10px;
+    margin-bottom: 4px;
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    font-family: inherit;
+    font-size: 15px;
+    color: var(--text);
+    text-align: center;
+    cursor: pointer;
+    transition: background .12s, border-color .12s;
+  }
+  .pick:hover { background: #f2f6fd; }
+  .pick.on { background: #eaf1fe; border-color: var(--mine-line); }
+  .pick .avatar { width: 34px; height: 34px; border-radius: 8px; }
+  .pick .info { flex: 1; min-width: 0; }
+  .pick .nm { font-weight: 700; display: block; }
+  .pick .md {
+    display: block;
+    font-size: 12px;
+    color: var(--muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .avatar {
+    flex: 0 0 auto;
+    width: 72px;
+    height: 72px;
+    border-radius: 12px;
+    background: #eef2fa;
+    image-rendering: pixelated;
+    shape-rendering: crispEdges;
+  }
+
+  /* 오른쪽 위 — 고른 강사 정보 */
+  .who {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    padding: 16px;
+    border-bottom: 1px solid var(--line);
+  }
+  .who .avatar { width: 56px; height: 56px; }
+  .who .nm { font-size: 18px; font-weight: 700; }
+  .who .md { font-size: 14px; color: var(--muted); }
+
+  .status {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 4px 11px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 700;
+    border: 1px solid transparent;
+    white-space: nowrap;
+  }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+  .s-done    { background: #e7f6ee; color: #1f7a4d; border-color: #c3e8d4; }
+  .s-wait    { background: #fff4e0; color: #a3661a; border-color: #f6dcb0; }
+  .s-wait .dot { animation: blink 1.6s ease-in-out infinite; }
+  .s-progress{ background: #e9f1ff; color: #2a5db0; border-color: #cddffb; }
+  .s-hold    { background: #f1f2f6; color: #6b7385; border-color: #dfe2ea; }
+  @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
+
+  /* 가운데 — 말풍선 */
+  .thread {
+    padding: 18px 16px;
+    max-height: 460px;
+    overflow-y: auto;
+    background: #fbfcff;
+  }
+  .turn { margin-bottom: 16px; }
+  .meta { font-size: 12px; color: var(--muted); margin-bottom: 5px; }
+  .bubble {
+    display: inline-block;
+    max-width: 78%;
+    padding: 12px 16px;
+    border-radius: 14px;
+    border: 1px solid var(--line);
+    background: var(--card);
+    word-break: keep-all;
+    white-space: pre-line;
+  }
+  .subject {
+    display: block;
+    font-weight: 700;
+    font-size: 14px;
+    margin-bottom: 6px;
+    padding-bottom: 6px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .turn.mine .bubble { background: var(--mine); border-color: var(--mine-line); }
+  .empty { padding: 60px 20px; color: var(--muted); }
+
+  /* 아래 — 답장 초안 */
+  .composer { padding: 16px; border-top: 1px solid var(--line); }
+  .tones { margin-bottom: 12px; }
+  .tone {
+    padding: 6px 14px;
+    margin: 0 3px;
+    border-radius: 999px;
+    border: 1px solid var(--line);
+    background: var(--card);
+    font-family: inherit;
+    font-size: 14px;
+    color: var(--muted);
+    cursor: pointer;
+  }
+  .tone.on { background: #eaf1fe; border-color: var(--mine-line); color: #2a5db0; font-weight: 700; }
+  .btn {
+    padding: 9px 18px;
+    border-radius: 10px;
+    border: 1px solid var(--mine-line);
+    background: var(--mine);
+    color: #2a5db0;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+  .btn:hover { filter: brightness(.97); }
+  .btn.ghost { background: var(--card); border-color: var(--line); color: var(--muted); }
+  .btn[disabled] { opacity: .5; cursor: default; }
+  #draft {
+    display: block;
+    width: 100%;
+    min-height: 200px;
+    margin: 14px 0 12px;
+    padding: 14px 16px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: #fbfcff;
+    font-family: inherit;
+    font-size: 15px;
+    line-height: 1.7;
+    color: var(--text);
+    text-align: center;
+    resize: vertical;
+  }
+  #draft:focus { outline: 2px solid var(--mine-line); outline-offset: -1px; }
+  .hint { font-size: 13px; color: var(--muted); margin: 10px 0 0; }
+</style>
+</head>
+<body>
+  <p class="notice">예시 자료로 만든 연습 화면입니다</p>
+  <h1>강사 메일 답장 도우미</h1>
+  <p class="sub">강사님을 고르면 주고받은 메일이 보이고, 그 자리에서 답장 초안을 만들어 드립니다</p>
+  <a class="back" href="index.html">← 교육 배정현황으로</a>
+
+  <div class="layout">
+    <aside class="panel">
+      <div class="panel-head">강사 고르기</div>
+      <div class="people" id="people"></div>
+    </aside>
+
+    <section class="panel">
+      <div id="who"></div>
+      <div class="thread" id="thread"></div>
+      <div class="composer">
+        <div class="tones">
+          <button type="button" class="tone on" data-tone="polite">정중하게</button>
+          <button type="button" class="tone" data-tone="short">간단하게</button>
+        </div>
+        <button type="button" class="btn" id="make">답장 초안 만들기</button>
+        <textarea id="draft" placeholder="초안을 만들면 여기에 나옵니다. 그대로 고쳐 쓰셔도 됩니다."></textarea>
+        <button type="button" class="btn ghost" id="copy">초안 복사하기</button>
+        <p class="hint">초안은 예시 문구입니다. 보내기 전에 내용을 꼭 확인해 주세요.</p>
+      </div>
+    </section>
+  </div>
+
+<script>
+// 02_instructors.csv 내용 — index.html 과 같은 자료
+const ROWS = [
+  { module: "파이썬 기초 문법",  name: "이지현", status: "확정",        sub: "김서우", subStatus: "확정",        date: "2026-09-15(월) 10:00~13:00", place: "강남 러닝센터 3층 A강의실" },
+  { module: "데이터 분석 실습",  name: "박준서", status: "회신 대기",    sub: "오하린", subStatus: "회신 대기",    date: "2026-09-17(수) 14:00~18:00", place: "온라인 (Zoom)" },
+  { module: "SQL 데이터 추출",   name: "정민아", status: "확정",        sub: "배시우", subStatus: "일정 조율 중", date: "2026-09-22(월) 10:00~13:00", place: "강남 러닝센터 2층 B강의실" },
+  { module: "머신러닝 입문",     name: "한도윤", status: "강의안 대기",  sub: "노지안", subStatus: "확정",        date: "2026-09-24(수) 13:00~17:00", place: "판교 이노베이션랩 5층" },
+  { module: "시각화와 리포팅",   name: "서예린", status: "일정 조율 중", sub: "문채원", subStatus: "회신 대기",    date: "2026-09-29(월) 10:00~14:00", place: "온라인 (Zoom)" },
+  { module: "클라우드 기초",     name: "최우진", status: "확정",        sub: "강리원", subStatus: "확정",        date: "2026-10-06(월) 09:00~13:00", place: "강남 러닝센터 3층 A강의실" },
+  { module: "프로젝트 멘토링",   name: "윤가온", status: "회신 대기",    sub: "신유하", subStatus: "강의안 대기",  date: "2026-10-08(수) 14:00~18:00", place: "판교 이노베이션랩 5층" },
+  { module: "포트폴리오 특강",   name: "임태호", status: "보류",        sub: "조은결", subStatus: "보류",        date: "2026-10-13(화) 19:00~21:00", place: "온라인 (Zoom)" }
+];
+
+const PALETTE = [
+  { hair: "#4a3b32", shirt: "#7aa7e0" },
+  { hair: "#8a5a3b", shirt: "#e08f8f" },
+  { hair: "#2f2f38", shirt: "#8fce9f" },
+  { hair: "#b8763c", shirt: "#b79ede" },
+  { hair: "#5b4a6d", shirt: "#f0c473" },
+  { hair: "#3d4c63", shirt: "#7fcfd0" },
+  { hair: "#6d3b3b", shirt: "#9db3e8" },
+  { hair: "#726b5e", shirt: "#e8a3c4" }
+];
+
+const STATUS_CLASS = {
+  "확정": "s-done",
+  "회신 대기": "s-wait",
+  "강의안 대기": "s-wait",
+  "일정 조율 중": "s-progress",
+  "보류": "s-hold"
+};
+
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) =>
+  ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+// 픽셀 캐릭터 도안 (index.html 과 동일, 머리색·옷색만 바뀜)
+function avatar(hair, shirt) {
+  const px = (x, y, w, h, fill) =>
+    `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${fill}"/>`;
+  return `
+<svg class="avatar" viewBox="0 0 16 16" role="img" aria-hidden="true">
+  ${px(4, 2, 8, 2, hair)}
+  ${px(5, 4, 6, 1, hair)}
+  ${px(4, 4, 1, 2, hair)}
+  ${px(11, 4, 1, 2, hair)}
+  ${px(5, 5, 6, 4, "var(--skin)")}
+  ${px(4, 6, 1, 1, "var(--skin)")}
+  ${px(11, 6, 1, 1, "var(--skin)")}
+  ${px(6, 6, 1, 1, "var(--ink)")}
+  ${px(9, 6, 1, 1, "var(--ink)")}
+  ${px(7, 8, 2, 1, "var(--skin-shade)")}
+  ${px(7, 9, 2, 1, "var(--skin-shade)")}
+  ${px(4, 10, 8, 6, shirt)}
+  ${px(3, 11, 1, 5, shirt)}
+  ${px(12, 11, 1, 5, shirt)}
+  ${px(7, 10, 2, 1, "var(--skin)")}
+  ${px(3, 15, 1, 1, "var(--skin)")}
+  ${px(12, 15, 1, 1, "var(--skin)")}
+</svg>`;
+}
+
+// 강사 · 보조강사를 한 사람씩 풀어 놓기
+const PEOPLE = [];
+ROWS.forEach((r, i) => {
+  PEOPLE.push({ role: "강사",     name: r.name, status: r.status,    module: r.module, date: r.date, place: r.place, color: PALETTE[i % PALETTE.length] });
+});
+ROWS.forEach((r, i) => {
+  PEOPLE.push({ role: "보조강사", name: r.sub,  status: r.subStatus, module: r.module, date: r.date, place: r.place, color: PALETTE[(i + 3) % PALETTE.length] });
+});
+
+// ── 날짜 도우미 ──────────────────────────────────────────────
+const WEEK = ["일", "월", "화", "수", "목", "금", "토"];
+
+// "2026-09-15(월) 10:00~13:00" → Date
+function scheduleDate(text) {
+  const [y, m, d] = text.slice(0, 10).split("-").map(Number);
+  return new Date(y, m - 1, d);
+}
+// 교육일에서 며칠 전 / 몇 시 → "9월 1일 (화) 오전 10:12"
+function daysBefore(base, days, hour, min) {
+  const d = new Date(base);
+  d.setDate(d.getDate() - days);
+  const ampm = hour < 12 ? "오전" : "오후";
+  const h12 = hour % 12 === 0 ? 12 : hour % 12;
+  return `${d.getMonth() + 1}월 ${d.getDate()}일 (${WEEK[d.getDay()]}) ${ampm} ${h12}:${String(min).padStart(2, "0")}`;
+}
+// "2026-09-15(월) 10:00~13:00" → "9월 15일(월) 10:00~13:00"
+function shortSchedule(text) {
+  return text.replace(/^\d{4}-(\d{2})-(\d{2})/, (_, m, d) => `${Number(m)}월 ${Number(d)}일`);
+}
+
+// ── 상태별 주고받은 메일 ─────────────────────────────────────
+// mine: true = 우리(교육운영팀)가 보낸 메일, false = 강사님이 보낸 메일
+function thread(p) {
+  const base = scheduleDate(p.date);
+  const when = shortSchedule(p.date);
+  const title = `[${p.module}] ${p.role} 배정 안내`;
+  const ask = {
+    mine: true, at: daysBefore(base, 21, 10, 12), subject: title,
+    text: `안녕하세요, ${p.name} ${p.role}님.\n알고링크 교육운영팀입니다.\n\n아래 과정의 ${p.role}으로 모시고자 연락드립니다.\n\n· 과정 : ${p.module}\n· 일시 : ${when}\n· 장소 : ${p.place}\n\n가능하신지 회신 부탁드립니다.\n감사합니다.`
+  };
+
+  switch (p.status) {
+    case "확정":
+      return [ask, {
+        mine: false, at: daysBefore(base, 20, 9, 5), subject: `RE: ${title}`,
+        text: `안녕하세요, 교육운영팀님.\n\n보내주신 일정 확인했습니다.\n${when} 진행 가능합니다.\n\n강의안은 교육 1주일 전까지 전달드리겠습니다.\n잘 부탁드립니다.`
+      }, {
+        mine: true, at: daysBefore(base, 20, 11, 30), subject: `RE: ${title}`,
+        text: `회신 감사합니다.\n${p.name} ${p.role}님 배정을 확정 처리했습니다.\n\n교육 3일 전에 최종 안내 메일 다시 드리겠습니다.`
+      }];
+
+    case "회신 대기":
+      return [ask, {
+        mine: true, at: daysBefore(base, 14, 15, 40), subject: `RE: ${title}`,
+        text: `안녕하세요, ${p.name} ${p.role}님.\n\n지난번 보내드린 ${p.module} 과정 관련해\n혹시 확인이 어려우셨을까 하여 한 번 더 연락드립니다.\n\n${when} 가능 여부만 알려주시면 감사하겠습니다.`
+      }];
+
+    case "강의안 대기":
+      return [ask, {
+        mine: false, at: daysBefore(base, 20, 20, 18), subject: `RE: ${title}`,
+        text: `네, 해당 일정 가능합니다.\n진행하겠습니다.`
+      }, {
+        mine: true, at: daysBefore(base, 10, 9, 45), subject: `[${p.module}] 강의안 전달 요청`,
+        text: `${p.name} ${p.role}님, 안녕하세요.\n\n교재 인쇄 일정이 있어 강의안(PDF)을 먼저 받아보려 합니다.\n교육 5일 전까지 전달 부탁드려도 될까요?\n\n초안 상태여도 괜찮습니다.`
+      }];
+
+    case "일정 조율 중":
+      return [ask, {
+        mine: false, at: daysBefore(base, 19, 13, 27), subject: `RE: ${title}`,
+        text: `연락 주셔서 감사합니다.\n\n죄송하지만 ${when}은 선약이 있어 어렵습니다.\n같은 주 다른 요일이나 다음 주로는 조정이 가능할까요?\n\n오전 시간대가 더 좋습니다.`
+      }, {
+        mine: true, at: daysBefore(base, 19, 16, 5), subject: `RE: ${title}`,
+        text: `알려주셔서 감사합니다.\n강의장 예약 상황을 확인한 뒤 대체 일정 몇 가지를 정리해 다시 연락드리겠습니다.`
+      }];
+
+    case "보류":
+      return [ask, {
+        mine: false, at: daysBefore(base, 18, 8, 52), subject: `RE: ${title}`,
+        text: `안녕하세요.\n\n제안 감사드립니다.\n다만 개인 사정으로 이번 기수는 참여가 어려울 것 같습니다.\n\n다음 기수에 다시 기회가 있다면 좋겠습니다.\n죄송합니다.`
+      }];
+
+    default:
+      return [ask];
+  }
+}
+
+// ── 상태별 답장 초안 ─────────────────────────────────────────
+function draftFor(p, tone) {
+  const when = shortSchedule(p.date);
+  const short = tone === "short";
+  const hello = short
+    ? `${p.name} ${p.role}님, 안녕하세요.`
+    : `안녕하세요, ${p.name} ${p.role}님.\n알고링크 교육운영팀입니다.`;
+  const bye = short
+    ? `감사합니다.`
+    : `늘 도움 주셔서 감사합니다.\n\n알고링크 교육운영팀 드림`;
+
+  const body = {
+    "확정": short
+      ? `${p.module} 과정 ${when} 확정되었습니다.\n장소는 ${p.place}입니다.\n\n교육 30분 전 도착 부탁드리며, 강의안은 1주일 전까지 보내주세요.`
+      : `${p.module} 과정 배정이 아래와 같이 확정되었습니다.\n\n· 일시 : ${when}\n· 장소 : ${p.place}\n\n당일에는 시작 30분 전까지 도착해 주시면 기자재 점검을 도와드리겠습니다.\n강의안은 교육 1주일 전까지 전달해 주시면 교재 준비에 반영하겠습니다.`,
+
+    "회신 대기": short
+      ? `${p.module} 과정(${when}) 가능 여부만 회신 부탁드립니다.\n어려우시면 그렇게 알려주셔도 괜찮습니다.`
+      : `앞서 보내드린 ${p.module} 과정 관련하여 다시 한번 연락드립니다.\n\n· 일시 : ${when}\n· 장소 : ${p.place}\n\n다른 강사님 일정도 함께 맞추고 있어, 이번 주 중으로 가능 여부만 알려주시면 큰 도움이 됩니다.\n일정이 어려우시면 편하게 말씀해 주셔도 괜찮습니다.`,
+
+    "강의안 대기": short
+      ? `${p.module} 강의안(PDF) 전달 부탁드립니다.\n교육일은 ${when}이고, 5일 전까지 주시면 좋겠습니다.\n초안도 괜찮습니다.`
+      : `${p.module} 과정 준비 관련하여 강의안 전달을 요청드립니다.\n\n· 교육일 : ${when}\n· 요청 : 강의안 PDF (교육 5일 전까지)\n\n교재 인쇄와 사전 안내 자료 준비에 필요한 절차로, 완성본이 아니어도 괜찮습니다.\n작업이 어려우시면 가능한 시점을 알려주시면 일정을 맞춰보겠습니다.`,
+
+    "일정 조율 중": short
+      ? `${p.module} 과정 대체 일정입니다.\n\n1안) 같은 주 오전\n2안) 다음 주 오전\n\n편하신 쪽으로 알려주세요. 장소는 ${p.place}입니다.`
+      : `${p.module} 과정 일정 조정 건으로 연락드립니다.\n\n말씀 주신 오전 시간대를 기준으로 아래 두 가지를 준비했습니다.\n\n· 1안 : 같은 주 오전 (${p.place})\n· 2안 : 다음 주 오전 (${p.place})\n\n편하신 쪽을 알려주시면 강의장 예약을 확정하겠습니다.\n두 안 모두 어려우시면 가능한 날짜를 알려주셔도 좋습니다.`,
+
+    "보류": short
+      ? `사정 잘 알겠습니다. ${p.module} 과정은 이번 기수 보류로 정리하겠습니다.\n다음 기수에 다시 연락드리겠습니다.`
+      : `사정 말씀 주셔서 감사합니다.\n${p.module} 과정은 이번 기수 보류로 정리해 두겠습니다.\n\n다음 기수 일정이 확정되면 가장 먼저 연락드리겠습니다.\n혹시 상황이 달라지면 언제든 편하게 말씀해 주세요.`
+  }[p.status] || `${p.module} 과정 관련하여 연락드립니다.`;
+
+  return `${hello}\n\n${body}\n\n${bye}`;
+}
+
+// ── 화면 그리기 ──────────────────────────────────────────────
+const peopleEl = document.getElementById("people");
+const whoEl = document.getElementById("who");
+const threadEl = document.getElementById("thread");
+const draftEl = document.getElementById("draft");
+const makeBtn = document.getElementById("make");
+const copyBtn = document.getElementById("copy");
+
+let picked = null;
+let tone = "polite";
+
+function badge(status) {
+  return `<span class="status ${STATUS_CLASS[status] || "s-hold"}"><span class="dot"></span>${esc(status)}</span>`;
+}
+
+function pickRow(p, i) {
+  return `
+    <button type="button" class="pick" data-i="${i}">
+      ${avatar(p.color.hair, p.color.shirt)}
+      <span class="info">
+        <span class="nm">${esc(p.name)}</span>
+        <span class="md">${esc(p.module)}</span>
+      </span>
+    </button>`;
+}
+
+peopleEl.innerHTML =
+  `<p class="group">강사</p>` +
+  PEOPLE.slice(0, ROWS.length).map((p, i) => pickRow(p, i)).join("") +
+  `<p class="group">보조강사</p>` +
+  PEOPLE.slice(ROWS.length).map((p, i) => pickRow(p, i + ROWS.length)).join("");
+
+function showEmpty() {
+  whoEl.innerHTML = `<div class="panel-head">주고받은 메일</div>`;
+  threadEl.innerHTML = `<p class="empty">왼쪽에서 강사님을 골라주세요.</p>`;
+}
+
+function show(i) {
+  picked = PEOPLE[i];
+
+  document.querySelectorAll(".pick").forEach((b) =>
+    b.classList.toggle("on", b.dataset.i === String(i)));
+
+  whoEl.innerHTML = `
+    <div class="who">
+      ${avatar(picked.color.hair, picked.color.shirt)}
+      <div>
+        <div class="nm">${esc(picked.name)} ${esc(picked.role)}님</div>
+        <div class="md">${esc(picked.module)} · ${esc(shortSchedule(picked.date))}</div>
+        <div style="margin-top:6px">${badge(picked.status)}</div>
+      </div>
+    </div>`;
+
+  threadEl.innerHTML = thread(picked).map((m) => `
+    <div class="turn ${m.mine ? "mine" : ""}">
+      <div class="meta">${m.mine ? "교육운영팀" : esc(picked.name) + " " + esc(picked.role) + "님"} · ${esc(m.at)}</div>
+      <div class="bubble"><span class="subject">${esc(m.subject)}</span>${esc(m.text)}</div>
+    </div>`).join("");
+  threadEl.scrollTop = threadEl.scrollHeight;
+
+  draftEl.value = "";
+}
+
+peopleEl.addEventListener("click", (e) => {
+  const btn = e.target.closest(".pick");
+  if (btn) show(Number(btn.dataset.i));
+});
+
+document.querySelectorAll(".tone").forEach((b) => {
+  b.addEventListener("click", () => {
+    tone = b.dataset.tone;
+    document.querySelectorAll(".tone").forEach((x) => x.classList.toggle("on", x === b));
+    if (picked && draftEl.value.trim()) draftEl.value = draftFor(picked, tone);
+  });
+});
+
+makeBtn.addEventListener("click", () => {
+  if (!picked) {
+    draftEl.value = "먼저 왼쪽에서 강사님을 골라주세요.";
+    return;
+  }
+  draftEl.value = draftFor(picked, tone);
+  draftEl.focus();
+});
+
+copyBtn.addEventListener("click", () => {
+  if (!draftEl.value.trim()) return;
+  draftEl.select();
+  let ok = false;
+  try { ok = document.execCommand("copy"); } catch (err) { ok = false; }
+  const done = () => {
+    copyBtn.textContent = "복사했습니다";
+    setTimeout(() => { copyBtn.textContent = "초안 복사하기"; }, 1500);
+  };
+  if (ok) { done(); return; }
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(draftEl.value).then(done, () => {
+      copyBtn.textContent = "직접 복사해 주세요 (Ctrl+C)";
+      setTimeout(() => { copyBtn.textContent = "초안 복사하기"; }, 2000);
+    });
+  }
+});
+
+showEmpty();
+show(0);
+</script>
+</body>
+</html>

@@ -1,0 +1,321 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>강사 메일 답장 도우미 — 예시 화면</title>
+<style>
+  :root {
+    --bg: #f6f8fc;
+    --card: #ffffff;
+    --line: #e6eaf2;
+    --text: #333b4a;
+    --muted: #7c869b;
+    --skin: #f4cfae;
+    --skin-shade: #d9a882;
+    --ink: #3c3a4a;
+    --mine: #e9f1ff;
+    --mine-line: #cddffb;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 28px 24px 56px;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Pretendard", "Malgun Gothic", "맑은 고딕", system-ui, sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+    text-align: center;
+  }
+  .notice { font-size: 13px; color: var(--muted); margin: 0 0 18px; }
+  h1 { font-size: 24px; margin: 0 0 24px; letter-spacing: -0.01em; }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 18px;
+    max-width: 1120px;
+    margin: 0 auto;
+    align-items: start;
+  }
+  @media (max-width: 860px) { .layout { grid-template-columns: 1fr; } }
+
+  .panel {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    box-shadow: 0 1px 2px rgba(60, 70, 100, .05);
+    overflow: hidden;
+  }
+  .panel-head {
+    padding: 14px 16px;
+    border-bottom: 1px solid var(--line);
+    font-size: 15px;
+    font-weight: 700;
+  }
+
+  /* ① 강사 명단 */
+  .people { padding: 10px; }
+  .group { font-size: 13px; font-weight: 700; color: var(--muted); margin: 10px 0 6px; }
+  .pick {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 7px 10px;
+    margin-bottom: 3px;
+    border: 1px solid transparent;
+    border-radius: 10px;
+    text-align: center;
+  }
+  .pick.on { background: #eaf1fe; border-color: var(--mine-line); }
+  .pick .avatar { width: 32px; height: 32px; border-radius: 8px; }
+  .pick .info { flex: 1; min-width: 0; }
+  .pick .nm { display: block; font-weight: 700; font-size: 15px; }
+  .pick .md {
+    display: block;
+    font-size: 12px;
+    color: var(--muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .avatar {
+    flex: 0 0 auto;
+    width: 56px;
+    height: 56px;
+    border-radius: 12px;
+    background: #eef2fa;
+    image-rendering: pixelated;
+    shape-rendering: crispEdges;
+  }
+
+  /* ② 고른 강사 머리글 */
+  .who {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    padding: 16px;
+    border-bottom: 1px solid var(--line);
+  }
+  .who .nm { font-size: 18px; font-weight: 700; }
+  .who .md { font-size: 14px; color: var(--muted); }
+  .status {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    margin-top: 6px;
+    padding: 4px 11px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 700;
+    background: #e7f6ee;
+    color: #1f7a4d;
+    border: 1px solid #c3e8d4;
+  }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+
+  /* ③ 말풍선 */
+  .thread { padding: 18px 16px; background: #fbfcff; }
+  .turn { margin-bottom: 16px; }
+  .turn:last-child { margin-bottom: 0; }
+  .meta { font-size: 12px; color: var(--muted); margin-bottom: 5px; }
+  .bubble {
+    display: inline-block;
+    max-width: 78%;
+    padding: 12px 16px;
+    border-radius: 14px;
+    border: 1px solid var(--line);
+    background: var(--card);
+    word-break: keep-all;
+    white-space: pre-line;
+  }
+  .subject {
+    display: block;
+    font-weight: 700;
+    font-size: 14px;
+    margin-bottom: 6px;
+    padding-bottom: 6px;
+    border-bottom: 1px dashed var(--line);
+  }
+  .turn.mine .bubble { background: var(--mine); border-color: var(--mine-line); }
+
+  /* ④ 답장 초안 */
+  .composer { padding: 16px; border-top: 1px solid var(--line); }
+  .btn {
+    padding: 9px 18px;
+    border-radius: 10px;
+    border: 1px solid var(--mine-line);
+    background: var(--mine);
+    color: #2a5db0;
+    font-family: inherit;
+    font-size: 15px;
+    font-weight: 700;
+  }
+  .draft {
+    margin: 14px 0 0;
+    padding: 16px;
+    border: 1px solid var(--line);
+    border-radius: 12px;
+    background: #fbfcff;
+    font-size: 15px;
+    line-height: 1.7;
+    white-space: pre-line;
+  }
+</style>
+</head>
+<body>
+  <p class="notice">지어낸 예시입니다</p>
+  <h1>강사 메일 답장 도우미</h1>
+
+  <div class="layout">
+    <aside class="panel">
+      <div class="panel-head">강사 고르기</div>
+      <div class="people" id="people"></div>
+    </aside>
+
+    <section class="panel">
+      <div class="who">
+        <span id="whoFace"></span>
+        <div>
+          <div class="nm">유하람 강사님</div>
+          <div class="md">엑셀 자동화 첫걸음 · 11월 3일(월) 10:00~13:00</div>
+          <div><span class="status"><span class="dot"></span>확정</span></div>
+        </div>
+      </div>
+
+      <div class="thread">
+        <div class="turn mine">
+          <div class="meta">교육운영팀 · 10월 13일 (화) 오전 10:12</div>
+          <div class="bubble"><span class="subject">[엑셀 자동화 첫걸음] 강사 배정 안내</span>안녕하세요, 유하람 강사님.
+알고링크 교육운영팀입니다.
+
+아래 과정의 강사로 모시고자 연락드립니다.
+
+· 과정 : 엑셀 자동화 첫걸음
+· 일시 : 11월 3일(월) 10:00~13:00
+· 장소 : 서초 배움터 2층 C강의실
+
+가능하신지 회신 부탁드립니다.
+감사합니다.</div>
+        </div>
+
+        <div class="turn">
+          <div class="meta">유하람 강사님 · 10월 14일 (수) 오전 9:05</div>
+          <div class="bubble"><span class="subject">RE: [엑셀 자동화 첫걸음] 강사 배정 안내</span>안녕하세요, 교육운영팀님.
+
+보내주신 일정 확인했습니다.
+11월 3일(월) 진행 가능합니다.
+
+강의안은 교육 1주일 전까지 전달드리겠습니다.
+잘 부탁드립니다.</div>
+        </div>
+
+        <div class="turn mine">
+          <div class="meta">교육운영팀 · 10월 14일 (수) 오전 11:30</div>
+          <div class="bubble"><span class="subject">RE: [엑셀 자동화 첫걸음] 강사 배정 안내</span>회신 감사합니다.
+유하람 강사님 배정을 확정 처리했습니다.
+
+교육 3일 전에 최종 안내 메일 다시 드리겠습니다.</div>
+        </div>
+      </div>
+
+      <div class="composer">
+        <button type="button" class="btn">답장 초안 만들기</button>
+        <div class="draft">안녕하세요, 유하람 강사님.
+알고링크 교육운영팀입니다.
+
+엑셀 자동화 첫걸음 과정 배정이 아래와 같이 확정되었습니다.
+
+· 일시 : 11월 3일(월) 10:00~13:00
+· 장소 : 서초 배움터 2층 C강의실
+
+당일에는 시작 30분 전까지 도착해 주시면
+기자재 점검을 도와드리겠습니다.
+
+늘 도움 주셔서 감사합니다.
+
+알고링크 교육운영팀 드림</div>
+      </div>
+    </section>
+  </div>
+
+<script>
+const LEAD = [
+  ["유하람", "엑셀 자동화 첫걸음"],
+  ["권세아", "업무 문서 정리법"],
+  ["남기훈", "파워포인트 속도내기"],
+  ["도예찬", "사내 데이터 읽기"],
+  ["백서진", "회의록 잘 쓰기"],
+  ["성다율", "노션으로 일정관리"],
+  ["오시연", "챗봇 활용 실습"],
+  ["하윤슬", "보고서 다듬기"]
+];
+const HELPER = [
+  ["강태이", "엑셀 자동화 첫걸음"],
+  ["구민재", "업무 문서 정리법"],
+  ["노아린", "파워포인트 속도내기"],
+  ["류하진", "사내 데이터 읽기"],
+  ["문서준", "회의록 잘 쓰기"],
+  ["신가율", "노션으로 일정관리"],
+  ["우재희", "챗봇 활용 실습"],
+  ["진소예", "보고서 다듬기"]
+];
+const PALETTE = [
+  { hair: "#4a3b32", shirt: "#7aa7e0" },
+  { hair: "#8a5a3b", shirt: "#e08f8f" },
+  { hair: "#2f2f38", shirt: "#8fce9f" },
+  { hair: "#b8763c", shirt: "#b79ede" },
+  { hair: "#5b4a6d", shirt: "#f0c473" },
+  { hair: "#3d4c63", shirt: "#7fcfd0" },
+  { hair: "#6d3b3b", shirt: "#9db3e8" },
+  { hair: "#726b5e", shirt: "#e8a3c4" }
+];
+
+function avatar(hair, shirt) {
+  const px = (x, y, w, h, fill) =>
+    `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${fill}"/>`;
+  return `
+<svg class="avatar" viewBox="0 0 16 16" role="img" aria-hidden="true">
+  ${px(4, 2, 8, 2, hair)}
+  ${px(5, 4, 6, 1, hair)}
+  ${px(4, 4, 1, 2, hair)}
+  ${px(11, 4, 1, 2, hair)}
+  ${px(5, 5, 6, 4, "var(--skin)")}
+  ${px(4, 6, 1, 1, "var(--skin)")}
+  ${px(11, 6, 1, 1, "var(--skin)")}
+  ${px(6, 6, 1, 1, "var(--ink)")}
+  ${px(9, 6, 1, 1, "var(--ink)")}
+  ${px(7, 8, 2, 1, "var(--skin-shade)")}
+  ${px(7, 9, 2, 1, "var(--skin-shade)")}
+  ${px(4, 10, 8, 6, shirt)}
+  ${px(3, 11, 1, 5, shirt)}
+  ${px(12, 11, 1, 5, shirt)}
+  ${px(7, 10, 2, 1, "var(--skin)")}
+  ${px(3, 15, 1, 1, "var(--skin)")}
+  ${px(12, 15, 1, 1, "var(--skin)")}
+</svg>`;
+}
+
+const row = ([name, module], i, on) => `
+  <div class="pick${on ? " on" : ""}">
+    ${avatar(PALETTE[i % 8].hair, PALETTE[i % 8].shirt)}
+    <span class="info">
+      <span class="nm">${name}</span>
+      <span class="md">${module}</span>
+    </span>
+  </div>`;
+
+document.getElementById("people").innerHTML =
+  `<p class="group">강사</p>` +
+  LEAD.map((p, i) => row(p, i, i === 0)).join("") +
+  `<p class="group">보조강사</p>` +
+  HELPER.map((p, i) => row(p, i + 3, false)).join("");
+
+document.getElementById("whoFace").innerHTML =
+  avatar(PALETTE[0].hair, PALETTE[0].shirt);
+</script>
+</body>
+</html>
