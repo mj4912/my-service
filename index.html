@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>강사 배정 현황</title>
+<style>
+  :root {
+    --bg: #f6f8fc;
+    --card: #ffffff;
+    --line: #e6eaf2;
+    --text: #333b4a;
+    --muted: #7c869b;
+    --skin: #f4cfae;
+    --skin-shade: #d9a882;
+    --ink: #3c3a4a;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 28px 24px 56px;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "Pretendard", "Malgun Gothic", "맑은 고딕", system-ui, sans-serif;
+    font-size: 16px;
+    line-height: 1.6;
+  }
+  .notice {
+    font-size: 13px;
+    color: var(--muted);
+    margin: 0 0 18px;
+  }
+  h1 {
+    font-size: 24px;
+    margin: 0 0 4px;
+    letter-spacing: -0.01em;
+  }
+  .sub {
+    margin: 0 0 24px;
+    font-size: 14px;
+    color: var(--muted);
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+    gap: 18px;
+    max-width: 1180px;
+  }
+  .card {
+    display: flex;
+    gap: 16px;
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    padding: 18px;
+    box-shadow: 0 1px 2px rgba(60, 70, 100, .05);
+  }
+  .avatar {
+    flex: 0 0 auto;
+    width: 72px;
+    height: 72px;
+    border-radius: 12px;
+    background: #eef2fa;
+    image-rendering: pixelated;
+    shape-rendering: crispEdges;
+  }
+  .body { min-width: 0; flex: 1; }
+  .course {
+    font-size: 20px;
+    font-weight: 700;
+    margin: 0 0 2px;
+    word-break: keep-all;
+  }
+  .people { margin: 0 0 12px; }
+  .person {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin-top: 8px;
+  }
+  /* 강사 / 보조강사 — 글자 굵기 동일 */
+  .role {
+    white-space: nowrap;
+    color: var(--muted);
+    font-size: 15px;
+    font-weight: 600;
+  }
+  .pname {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text);
+    white-space: nowrap;
+  }
+  .row {
+    display: grid;
+    grid-template-columns: max-content 1fr;
+    gap: 4px 10px;
+    font-size: 15px;
+    margin-bottom: 4px;
+  }
+  .label {
+    white-space: nowrap;
+    color: var(--muted);
+    font-weight: 600;
+  }
+  .value { min-width: 0; word-break: keep-all; }
+  .status {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 5px 12px;
+    border-radius: 999px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    border: 1px solid transparent;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background .12s, color .12s, border-color .12s;
+  }
+  .status:hover { filter: brightness(.97); }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+  /* 완료 계열 */
+  .s-done    { background: #e7f6ee; color: #1f7a4d; border-color: #c3e8d4; }
+  /* 기다리는 중 — 색으로 구분 */
+  .s-wait    { background: #fff4e0; color: #a3661a; border-color: #f6dcb0; }
+  .s-wait .dot { animation: blink 1.6s ease-in-out infinite; }
+  /* 조율 중 */
+  .s-progress{ background: #e9f1ff; color: #2a5db0; border-color: #cddffb; }
+  /* 보류 */
+  .s-hold    { background: #f1f2f6; color: #6b7385; border-color: #dfe2ea; }
+  @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
+</style>
+</head>
+<body>
+  <p class="notice">예시 자료로 만든 연습 화면입니다</p>
+  <h1>교육 배정현황</h1>
+  <p class="sub">02_instructors.csv 기준</p>
+  <div class="grid" id="grid"></div>
+
+<script>
+// 02_instructors.csv 내용
+const ROWS = [
+  { module: "파이썬 기초 문법",  name: "이지현", status: "확정",        sub: "김서우", subStatus: "확정",        date: "2026-09-15(월) 10:00~13:00", place: "강남 러닝센터 3층 A강의실" },
+  { module: "데이터 분석 실습",  name: "박준서", status: "회신 대기",    sub: "오하린", subStatus: "회신 대기",    date: "2026-09-17(수) 14:00~18:00", place: "온라인 (Zoom)" },
+  { module: "SQL 데이터 추출",   name: "정민아", status: "확정",        sub: "배시우", subStatus: "일정 조율 중", date: "2026-09-22(월) 10:00~13:00", place: "강남 러닝센터 2층 B강의실" },
+  { module: "머신러닝 입문",     name: "한도윤", status: "강의안 대기",  sub: "노지안", subStatus: "확정",        date: "2026-09-24(수) 13:00~17:00", place: "판교 이노베이션랩 5층" },
+  { module: "시각화와 리포팅",   name: "서예린", status: "일정 조율 중", sub: "문채원", subStatus: "회신 대기",    date: "2026-09-29(월) 10:00~14:00", place: "온라인 (Zoom)" },
+  { module: "클라우드 기초",     name: "최우진", status: "확정",        sub: "강리원", subStatus: "확정",        date: "2026-10-06(월) 09:00~13:00", place: "강남 러닝센터 3층 A강의실" },
+  { module: "프로젝트 멘토링",   name: "윤가온", status: "회신 대기",    sub: "신유하", subStatus: "강의안 대기",  date: "2026-10-08(수) 14:00~18:00", place: "판교 이노베이션랩 5층" },
+  { module: "포트폴리오 특강",   name: "임태호", status: "보류",        sub: "조은결", subStatus: "보류",        date: "2026-10-13(화) 19:00~21:00", place: "온라인 (Zoom)" }
+];
+
+// 강사 · 보조강사가 함께 쓰는 상태 (배지를 누르면 다음 상태로 넘어감)
+const STATUSES = ["확정", "회신 대기", "강의안 대기", "일정 조율 중", "보류"];
+
+// 사람마다 머리색 / 옷색만 다르게
+const PALETTE = [
+  { hair: "#4a3b32", shirt: "#7aa7e0" },
+  { hair: "#8a5a3b", shirt: "#e08f8f" },
+  { hair: "#2f2f38", shirt: "#8fce9f" },
+  { hair: "#b8763c", shirt: "#b79ede" },
+  { hair: "#5b4a6d", shirt: "#f0c473" },
+  { hair: "#3d4c63", shirt: "#7fcfd0" },
+  { hair: "#6d3b3b", shirt: "#9db3e8" },
+  { hair: "#726b5e", shirt: "#e8a3c4" }
+];
+
+const STATUS_CLASS = {
+  "확정": "s-done",
+  "회신 대기": "s-wait",
+  "강의안 대기": "s-wait",
+  "일정 조율 중": "s-progress",
+  "보류": "s-hold"
+};
+
+// 픽셀 캐릭터 도안 (하나만 사용, 머리색·옷색만 바뀜)
+function avatar(hair, shirt) {
+  const px = (x, y, w, h, fill) =>
+    `<rect x="${x}" y="${y}" width="${w}" height="${h}" fill="${fill}"/>`;
+  return `
+<svg class="avatar" viewBox="0 0 16 16" role="img" aria-hidden="true">
+  ${px(4, 2, 8, 2, hair)}
+  ${px(5, 4, 6, 1, hair)}
+  ${px(4, 4, 1, 2, hair)}
+  ${px(11, 4, 1, 2, hair)}
+  ${px(5, 5, 6, 4, "var(--skin)")}
+  ${px(4, 6, 1, 1, "var(--skin)")}
+  ${px(11, 6, 1, 1, "var(--skin)")}
+  ${px(6, 6, 1, 1, "var(--ink)")}
+  ${px(9, 6, 1, 1, "var(--ink)")}
+  ${px(7, 8, 2, 1, "var(--skin-shade)")}
+  ${px(7, 9, 2, 1, "var(--skin-shade)")}
+  ${px(4, 10, 8, 6, shirt)}
+  ${px(3, 11, 1, 5, shirt)}
+  ${px(12, 11, 1, 5, shirt)}
+  ${px(7, 10, 2, 1, "var(--skin)")}
+  ${px(3, 15, 1, 1, "var(--skin)")}
+  ${px(12, 15, 1, 1, "var(--skin)")}
+</svg>`;
+}
+
+const esc = (s) => s.replace(/[&<>"]/g, (c) =>
+  ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+
+// 강사 / 보조강사 한 줄 — 역할 · 이름 · 상태 배지 (두 줄이 같은 모양)
+function person(role, name, status) {
+  return `
+      <div class="person">
+        <span class="role">${esc(role)}</span>
+        <span class="pname">${esc(name)}</span>
+        <button type="button" class="status ${STATUS_CLASS[status] || "s-hold"}"
+                data-status="${esc(status)}" title="눌러서 상태 변경">
+          <span class="dot"></span>${esc(status)}
+        </button>
+      </div>`;
+}
+
+document.getElementById("grid").innerHTML = ROWS.map((r, i) => {
+  const c = PALETTE[i % PALETTE.length];
+  return `
+  <article class="card">
+    ${avatar(c.hair, c.shirt)}
+    <div class="body">
+      <p class="course">${esc(r.module)}</p>
+      <div class="people">
+        ${person("강사", r.name, r.status)}
+        ${person("보조강사", r.sub, r.subStatus)}
+      </div>
+      <div class="row">
+        <span class="label">일정</span><span class="value">${esc(r.date)}</span>
+        <span class="label">장소</span><span class="value">${esc(r.place)}</span>
+      </div>
+    </div>
+  </article>`;
+}).join("");
+
+// 배지를 누르면 다음 상태로 (강사 · 보조강사 동일하게 동작)
+document.getElementById("grid").addEventListener("click", (e) => {
+  const badge = e.target.closest(".status");
+  if (!badge) return;
+  const next = STATUSES[(STATUSES.indexOf(badge.dataset.status) + 1) % STATUSES.length];
+  badge.dataset.status = next;
+  badge.className = "status " + (STATUS_CLASS[next] || "s-hold");
+  badge.innerHTML = `<span class="dot"></span>${esc(next)}`;
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,14 @@
+# Windows / Office 임시 파일
+Thumbs.db
+desktop.ini
+~$*
+*.tmp
+
+# macOS
+.DS_Store
+
+# 사내 양식 문서는 올리지 않음
+*.xlsx
+
+# Claude Code 로컬 설정
+.claude/settings.local.json
