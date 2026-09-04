@@ -16,7 +16,20 @@
 
 ### 보는 방법
 
-`index.html` 파일을 브라우저로 열면 됩니다. 별도 설치나 서버가 필요 없습니다.
+**내 컴퓨터에서 확인할 때**
+
+```
+node dev-server.js
+```
+
+를 실행하고 브라우저에서 <http://localhost:3000> 을 엽니다.
+(`index.html` 파일을 그냥 두 번 눌러 열면 AI 호출이 되지 않습니다. 주소로 열어야 합니다.)
+
+**Vercel에 올렸을 때**
+
+그대로 돕니다. 단, Vercel 프로젝트 설정의
+`Settings → Environment Variables` 에 `GEMINI_API_KEY` 를 등록해야 합니다.
+(`.env` 파일은 깃허브에 올라가지 않으므로 Vercel이 알지 못합니다.)
 
 명단은 `index.html` 안의 `ROWS`, 메일 이력은 `MAILS`를 고치면 바뀝니다.
 초안은 저장되지 않고, 새로고침하면 사라집니다.
